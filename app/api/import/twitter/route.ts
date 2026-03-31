@@ -80,11 +80,18 @@ interface UserLegacy {
   name?: string
 }
 
+interface ArticleBlock {
+  text?: string
+  type?: string
+}
+
 interface ArticleResult {
   title?: string
   preview_image?: { url?: string }
   cover_media?: { media_info?: { original_img_url?: string } }
   content?: string
+  // Some X article payloads include a Draft.js-like content_state
+  content_state?: { blocks?: ArticleBlock[] }
 }
 
 interface TweetResult {
@@ -167,18 +174,43 @@ function bestVideoUrl(variants: MediaVariant[]): string | null {
   return mp4[0]?.url ?? null
 }
 
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+}
+
+function articleBlocksText(article: ArticleResult): string {
+  const blocks = article.content_state?.blocks ?? []
+  const texts = blocks
+    .map((b) => (b.text ?? '').trim())
+    .filter(Boolean)
+    .slice(0, 8)
+  return texts.join('\n\n')
+}
+
 function tweetFullText(tweet: TweetResult): string {
   if (tweet.note_tweet?.note_tweet_results?.result?.text) {
-    return tweet.note_tweet.note_tweet_results.result.text
+    return decodeHtmlEntities(tweet.note_tweet.note_tweet_results.result.text)
   }
   const article = tweet.article?.article_results?.result
   if (article) {
     const parts: string[] = []
     if (article.title) parts.push(article.title)
     if (article.content) parts.push(article.content)
-    if (parts.length > 0) return parts.join('\n\n')
+
+    // Fallback: some X articles ship content in content_state.blocks
+    if (parts.length === 0) {
+      const blocks = articleBlocksText(article)
+      if (blocks) parts.push(blocks)
+    }
+
+    if (parts.length > 0) return decodeHtmlEntities(parts.join('\n\n'))
   }
-  return tweet.legacy?.full_text ?? ''
+  return decodeHtmlEntities(tweet.legacy?.full_text ?? '')
 }
 
 function extractMedia(tweet: TweetResult) {
