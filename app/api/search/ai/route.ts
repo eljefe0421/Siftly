@@ -211,7 +211,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // ── Step 1: Smart candidate selection ─────────────────────────────────────
   const keywords = extractKeywords(query)
   const intentSlugs = category ? [] : await detectIntentCategories(query)
-  const MAX_CANDIDATES = 150 // smaller, richer set beats larger, noisier set
+  const MAX_CANDIDATES = 300
 
   const selectShape = {
     id: true, tweetId: true, text: true, authorHandle: true, authorName: true,
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               : { OR: keywordConditions }),
           },
           // FTS results are pre-ranked; LIKE results fall back to recency ordering
-          orderBy: useFts ? undefined : [{ enrichedAt: 'desc' }, { tweetCreatedAt: 'desc' }],
+          orderBy: useFts ? undefined : [{ tweetCreatedAt: 'desc' }, { importedAt: 'desc' }],
           take: MAX_CANDIDATES,
           select: selectShape,
         })
@@ -258,8 +258,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             ...categoryFilter,
             categories: { some: { category: { slug: { in: intentSlugs } } } },
           },
-          orderBy: [{ enrichedAt: 'desc' }, { tweetCreatedAt: 'desc' }],
-          take: 80,
+          orderBy: [{ tweetCreatedAt: 'desc' }, { importedAt: 'desc' }],
+          take: 120,
           select: selectShape,
         })
       : prisma.bookmark.findMany({ where: { id: 'never' }, select: selectShape }),
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (bookmarks.length < 20) {
     const fallback = await prisma.bookmark.findMany({
       where: categoryFilter,
-      orderBy: [{ enrichedAt: 'desc' }, { tweetCreatedAt: 'desc' }],
+      orderBy: [{ tweetCreatedAt: 'desc' }, { importedAt: 'desc' }],
       take: MAX_CANDIDATES,
       select: selectShape,
     })
@@ -331,7 +331,7 @@ Return ONLY valid JSON — no markdown, no prose outside the JSON object:
 }
 
 Constraints:
-- Up to 15 matches, sorted by score descending
+- Return ALL matches that score 0.30 or above — no cap on count
 - Minimum score 0.30 — be generous for semantically close matches
 - Never repeat an id
 - Only return ids from the list above
@@ -342,7 +342,7 @@ Constraints:
   try {
     const msg = await client.messages.create({
       model,
-      max_tokens: 1500,
+      max_tokens: 8000,
       messages: [{ role: 'user', content: prompt }],
     })
     const rawText = msg.content.find((b) => b.type === 'text')?.text ?? '{}'

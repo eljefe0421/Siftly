@@ -1,25 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import prisma from '@/lib/db'
 import { resolveAnthropicClient } from '@/lib/claude-cli-auth'
-import {
-  seedDefaultCategories,
-  categorizeBatch,
-  mapBookmarkForCategorization,
-  writeCategoryResults,
-  BOOKMARK_SELECT,
-} from '@/lib/categorizer'
-import {
-  getAnthropicModel,
-  analyzeItem,
-  runWithConcurrency,
-  enrichBatchSemanticTags,
-  BookmarkForEnrichment,
-} from '@/lib/vision-analyzer'
+import { getCliAuthStatus } from '@/lib/claude-cli-auth'
+import { categorizeAll, seedDefaultCategories } from '@/lib/categorizer'
+import { analyzeAllUntagged, enrichAllBookmarks } from '@/lib/vision-analyzer'
 import { backfillEntities } from '@/lib/rawjson-extractor'
 import { rebuildFts } from '@/lib/fts'
 
-type Stage = 'vision' | 'entities' | 'enrichment' | 'categorize' | 'parallel'
+type Stage = 'vision' | 'entities' | 'enrichment' | 'categorize'
 
 interface CategorizationState {
   status: 'idle' | 'running' | 'stopping'
@@ -92,9 +80,6 @@ export async function DELETE(): Promise<NextResponse> {
   return NextResponse.json({ stopped: true })
 }
 
-const PIPELINE_WORKERS = 20
-const CAT_BATCH_SIZE = 25
-
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (getState().status === 'running' || getState().status === 'stopping') {
     return NextResponse.json({ error: 'Categorization is already running' }, { status: 409 })
@@ -146,222 +131,87 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const dbApiKey =
     (await prisma.setting.findUnique({ where: { key: 'anthropicApiKey' } }))?.value?.trim() || ''
 
+  // Sequential pipeline: entities → vision → enrichment → categorize → rebuild FTS
   void (async () => {
     const counts = { visionTagged: 0, entitiesExtracted: 0, enriched: 0, categorized: 0 }
 
     try {
-      let client: Anthropic
+      let client
       try {
         client = resolveAnthropicClient({ dbKey: dbApiKey })
       } catch {
-        setState({ lastError: 'No Anthropic API key configured. Go to Settings to add one, or log in with Claude CLI.' })
+        const cliStatus = getCliAuthStatus()
+        if (cliStatus.available && cliStatus.expired) {
+          setState({ lastError: 'Claude CLI session expired. Open Claude Code or run `claude` in your terminal to refresh it.' })
+        } else {
+          setState({ lastError: 'No Anthropic API key configured. Go to Settings to add one, or log in with Claude CLI.' })
+        }
         console.error('No API key or CLI auth — skipping pipeline')
         return
       }
 
-        await seedDefaultCategories()
+      await seedDefaultCategories()
 
-        if (force) {
-          await prisma.mediaItem.updateMany({ where: { imageTags: '{}' }, data: { imageTags: null } })
-          await prisma.bookmark.updateMany({ where: { semanticTags: '[]' }, data: { semanticTags: null } })
-        }
+      if (force) {
+        await prisma.mediaItem.updateMany({ where: { imageTags: '{}' }, data: { imageTags: null } })
+        await prisma.bookmark.updateMany({ where: { semanticTags: '[]' }, data: { semanticTags: null } })
+      }
 
-        // Stage 1: Entity extraction (free, fast — no API calls)
-        if (!shouldAbort()) {
-          setState({ stage: 'entities' })
-          counts.entitiesExtracted = await backfillEntities((n) => {
-            counts.entitiesExtracted = n
-            setState({ stageCounts: { ...counts } })
-          }, shouldAbort).catch((err) => {
-            console.error('Entity extraction error:', err)
-            return counts.entitiesExtracted
-          })
+      // Stage 1: Entity extraction (free, fast — no API calls)
+      if (!shouldAbort()) {
+        setState({ stage: 'entities' })
+        counts.entitiesExtracted = await backfillEntities((n) => {
+          counts.entitiesExtracted = n
           setState({ stageCounts: { ...counts } })
-        }
+        }, shouldAbort).catch((err) => {
+          console.error('Entity extraction error:', err)
+          return counts.entitiesExtracted
+        })
+        setState({ stageCounts: { ...counts } })
+      }
 
-        // Stage 2: Parallel pipeline — vision + enrichment + categorize per bookmark
-        if (!shouldAbort()) {
-          // Fetch all bookmark IDs to process
-          let bookmarkIdsToProcess: string[]
-          if (bookmarkIds.length > 0) {
-            bookmarkIdsToProcess = bookmarkIds
-          } else if (force) {
-            const all = await prisma.bookmark.findMany({ select: { id: true }, orderBy: { id: 'asc' } })
-            bookmarkIdsToProcess = all.map((b) => b.id)
-          } else {
-            const unprocessed = await prisma.bookmark.findMany({
-              where: { enrichedAt: null },
-              select: { id: true },
-              orderBy: { id: 'asc' },
-            })
-            bookmarkIdsToProcess = unprocessed.map((b) => b.id)
-          }
+      // Stage 2: Analyze ALL untagged media (images, video thumbnails, gifs)
+      if (!shouldAbort()) {
+        setState({ stage: 'vision' })
+        counts.visionTagged = await analyzeAllUntagged(client, (n) => {
+          counts.visionTagged = n
+          setState({ stageCounts: { ...counts } })
+        }, shouldAbort).catch((err) => {
+          const msg = err instanceof Error ? err.message : String(err)
+          console.error('Vision analysis error:', msg)
+          setState({ lastError: `Vision: ${msg.slice(0, 120)}` })
+          return counts.visionTagged
+        })
+        setState({ stageCounts: { ...counts } })
+      }
 
-          const runTotal = bookmarkIdsToProcess.length
-          setState({ stage: 'parallel', done: 0, total: runTotal, stageCounts: { ...counts } })
-
-          // Load category metadata once (shared across all workers)
-          const dbCategories = await prisma.category.findMany({
-            select: { slug: true, name: true, description: true },
-          })
-          const allSlugs = dbCategories.map((c) => c.slug)
-          const categoryDescriptions = Object.fromEntries(
-            dbCategories.map((c) => [c.slug, c.description?.trim() || c.name]),
-          )
-          const model = await getAnthropicModel()
-
-          // Shared categorization queue (JS single-threaded: splice is atomic vs async)
-          const catPending: string[] = []
-          let catFlushing = false
-
-          async function drainCategorizeQueue(final = false): Promise<void> {
-            if (final) {
-              // Wait for any in-progress flush before draining remainder
-              while (catFlushing) {
-                await new Promise<void>((resolve) => setTimeout(resolve, 50))
-              }
-            } else if (catFlushing || catPending.length < CAT_BATCH_SIZE) {
-              return
-            }
-
-            catFlushing = true
-            try {
-              while (catPending.length > 0) {
-                if (!final && catPending.length < CAT_BATCH_SIZE) break
-                const ids = catPending.splice(0, CAT_BATCH_SIZE)
-                if (ids.length === 0) break
-                const rows = await prisma.bookmark.findMany({
-                  where: { id: { in: ids } },
-                  select: BOOKMARK_SELECT,
-                })
-                const batch = rows.map(mapBookmarkForCategorization)
-                try {
-                  const results = await categorizeBatch(batch, client, categoryDescriptions, allSlugs)
-                  await writeCategoryResults(results)
-                  counts.categorized += ids.length
-                  setState({ stageCounts: { ...counts } })
-                } catch (catErr) {
-                  console.error('[parallel] categorize batch error:', catErr)
-                }
-              }
-            } finally {
-              catFlushing = false
-            }
-          }
-
-          let processedCount = 0
-
-          async function processBookmark(bookmarkId: string): Promise<void> {
-            if (shouldAbort()) return
-
-            const bm = await prisma.bookmark.findUnique({
-              where: { id: bookmarkId },
-              select: {
-                id: true,
-                text: true,
-                semanticTags: true,
-                entities: true,
-                mediaItems: {
-                  where: { type: { in: ['photo', 'gif', 'video'] } },
-                  select: { id: true, url: true, thumbnailUrl: true, type: true, imageTags: true },
-                },
-              },
-            })
-            if (!bm) return
-
-            // Vision: analyze any untagged media items
-            let anyVisionRan = false
-            for (const media of bm.mediaItems) {
-              if (shouldAbort()) return
-              if (media.imageTags !== null) continue
-              try {
-                await analyzeItem(
-                  { id: media.id, url: media.url, thumbnailUrl: media.thumbnailUrl, type: media.type },
-                  client,
-                  model,
-                )
-                anyVisionRan = true
-                counts.visionTagged++
-                setState({ stageCounts: { ...counts } })
-              } catch (err) {
-                console.warn('[parallel] vision failed for', media.id, err instanceof Error ? err.message : err)
-              }
-            }
-
-            // Enrichment: generate semantic tags if not already done
-            if (!bm.semanticTags) {
-              // Re-fetch image tags from DB after vision (or use initial fetch if no vision ran)
-              const imageTags = anyVisionRan
-                ? (
-                    await prisma.mediaItem.findMany({
-                      where: { bookmarkId: bm.id, type: { in: ['photo', 'gif', 'video'] } },
-                      select: { imageTags: true },
-                    })
-                  )
-                    .map((m) => m.imageTags)
-                    .filter((t): t is string => t !== null && t !== '' && t !== '{}')
-                : bm.mediaItems
-                    .map((m) => m.imageTags)
-                    .filter((t): t is string => t !== null && t !== '' && t !== '{}')
-
-              if (imageTags.length === 0 && bm.text.length < 20) {
-                // Trivial bookmark — skip enrichment
-                await prisma.bookmark.update({ where: { id: bm.id }, data: { semanticTags: '[]' } })
-              } else {
-                let entities: BookmarkForEnrichment['entities'] = undefined
-                if (bm.entities) {
-                  try {
-                    entities = JSON.parse(bm.entities) as BookmarkForEnrichment['entities']
-                  } catch { /* ignore */ }
-                }
-                try {
-                  const results = await enrichBatchSemanticTags(
-                    [{ id: bm.id, text: bm.text, imageTags, entities }],
-                    client,
-                  )
-                  const result = results[0]
-                  if (result?.tags.length) {
-                    await prisma.bookmark.update({
-                      where: { id: bm.id },
-                      data: {
-                        semanticTags: JSON.stringify(result.tags),
-                        enrichmentMeta: JSON.stringify({
-                          sentiment: result.sentiment,
-                          people: result.people,
-                          companies: result.companies,
-                        }),
-                      },
-                    })
-                    counts.enriched++
-                    setState({ stageCounts: { ...counts } })
-                  }
-                } catch (err) {
-                  console.warn('[parallel] enrichment failed for', bm.id, err instanceof Error ? err.message : err)
-                }
-              }
-            }
-
-            // Queue for categorization
-            catPending.push(bm.id)
-            processedCount++
-            setState({ done: processedCount, stageCounts: { ...counts } })
-            await drainCategorizeQueue()
-          }
-
-          // Run all bookmark workers with bounded concurrency
-          const tasks = bookmarkIdsToProcess.map((id) => () => processBookmark(id))
-          try {
-            await runWithConcurrency(tasks, PIPELINE_WORKERS)
-          } finally {
-            // Always drain remaining items even if some workers threw
-            await drainCategorizeQueue(true)
-          }
-        }
+      // Stage 3: Generate semantic tags for all bookmarks
+      if (!shouldAbort()) {
+        console.log('[pipeline] Starting enrichment stage, shouldAbort:', shouldAbort())
+        setState({ stage: 'enrichment' })
+        counts.enriched = await enrichAllBookmarks(client, (n) => {
+          counts.enriched = n
+          setState({ stageCounts: { ...counts } })
+        }, shouldAbort).catch((err) => {
+          console.error('Semantic enrichment error:', err)
+          return counts.enriched
+        })
+        setState({ stageCounts: { ...counts } })
+      }
     } catch (err) {
-      console.error('Pipeline error:', err)
-      setState({ lastError: err instanceof Error ? err.message.slice(0, 200) : String(err) })
+      console.error('Pre-categorization enrichment error:', err)
     }
 
+    // Stage 4: Categorize using text + image tags + semantic tags + entities
+    if (!shouldAbort()) {
+      setState({ stage: 'categorize' })
+      await categorizeAll(bookmarkIds, (done, runTotal) => {
+        counts.categorized = done
+        setState({ done, total: runTotal, stageCounts: { ...counts } })
+      }, force, shouldAbort)
+    }
+
+    // Stage 5: Rebuild FTS5 search index
     if (!shouldAbort()) {
       await rebuildFts().catch((err) => console.error('FTS rebuild error:', err))
     }

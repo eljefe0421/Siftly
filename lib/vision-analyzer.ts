@@ -359,24 +359,8 @@ export async function enrichBatchSemanticTags(
     })).filter((r) => r.id)
   }
 
-  // Prefer CLI over SDK
-  if (await getCliAvailability()) {
-    const modelSetting = await getAnthropicModel()
-    const cliModel = modelNameToCliAlias(modelSetting)
-
-    const result = await claudePrompt(prompt, { model: cliModel, timeoutMs: 90_000 })
-    if (result.success && result.data) {
-      try {
-        return parseResponse(result.data)
-      } catch {
-        console.warn('[enrich] CLI response parse failed, falling back to SDK')
-      }
-    }
-  }
-
-  // Fallback to SDK
   if (!client) {
-    console.warn('[enrich] CLI not available and no API client')
+    console.warn('[enrich] No API client available')
     return []
   }
 
@@ -419,8 +403,10 @@ export async function enrichAllBookmarks(
   let enriched = 0
   let cursor: string | undefined
 
+  console.log('[enrichAll] Starting enrichment, CHUNK:', CHUNK, 'BATCH_SIZE:', ENRICH_BATCH_SIZE, 'CONCURRENCY:', ENRICH_CONCURRENCY)
+
   while (true) {
-    if (shouldAbort?.()) break
+    if (shouldAbort?.()) { console.log('[enrichAll] Aborted'); break }
 
     const rows = await prisma.bookmark.findMany({
       where: {
@@ -437,6 +423,7 @@ export async function enrichAllBookmarks(
       },
     })
 
+    console.log('[enrichAll] Fetched', rows.length, 'rows with semanticTags=null, cursor:', cursor ?? 'start')
     if (rows.length === 0) break
     cursor = rows[rows.length - 1].id
 

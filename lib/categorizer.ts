@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import prisma from '@/lib/db'
 import { buildImageContext } from '@/lib/image-context'
-import { resolveAnthropicClient, getCliAvailability, claudePrompt, modelNameToCliAlias } from '@/lib/claude-cli-auth'
+import { resolveAnthropicClient } from '@/lib/claude-cli-auth'
 import { getAnthropicModel } from '@/lib/settings'
 
 const BATCH_SIZE = 20
@@ -239,24 +239,7 @@ export async function categorizeBatch(
 
   const prompt = buildCategorizationPrompt(bookmarks, categoryDescriptions, allSlugs)
 
-  // Prefer CLI over SDK (avoids OAuth token extraction, uses CLI directly)
-  if (await getCliAvailability()) {
-    const modelSetting = await getAnthropicModel()
-    const cliModel = modelNameToCliAlias(modelSetting)
-
-    const result = await claudePrompt(prompt, { model: cliModel, timeoutMs: 60_000 })
-    if (result.success && result.data) {
-      try {
-        return parseCategorizationResponse(result.data, new Set(allSlugs))
-      } catch (parseErr) {
-        console.warn('[categorize] CLI response parse failed, falling back to SDK:', parseErr)
-      }
-    } else {
-      console.warn('[categorize] CLI failed, falling back to SDK:', result.error)
-    }
-  }
-
-  // Fallback to SDK (requires API key)
+  // Always use SDK for categorization — CLI can't handle the large prompts
   if (!client) {
     throw new Error('Claude CLI not available and no API key configured.')
   }

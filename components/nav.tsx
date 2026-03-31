@@ -17,7 +17,6 @@ import {
   Bookmark,
   Copy,
   Check,
-  Coffee,
 } from 'lucide-react'
 
 interface NavItem {
@@ -35,55 +34,18 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-const DONATION_ADDRESS = '0xcF10B967a9e422753812004Cd59990f62E360760'
-const BUILDER_X = 'https://x.com/viperr'
-
-function SupportFooter() {
-  const [copied, setCopied] = useState(false)
-
-  function copyAddress() {
-    void navigator.clipboard.writeText(DONATION_ADDRESS).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
+function NavFooter() {
   return (
-    <div className="mx-3 mt-auto mb-3 pt-3 border-t border-zinc-800/50">
-      {/* Builder credit */}
+    <div className="mx-3 mt-auto mb-3 pt-3 border-t border-[#1a2e22]">
       <a
-        href={BUILDER_X}
+        href="https://x.com/diego_salinas33"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all group mb-1"
+        className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[#4a6055] hover:text-[#00e676] hover:bg-[#0e1612] transition-all group"
       >
         <span className="text-[13px]">𝕏</span>
-        <span className="text-[11px] font-medium">Built by @viperr</span>
+        <span className="text-[11px] font-medium">@diego_salinas33</span>
       </a>
-
-      {/* Donate card */}
-      <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/30 p-3">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Coffee size={12} className="text-amber-400 shrink-0" />
-          <span className="text-[11px] font-semibold text-zinc-300">Support Siftly</span>
-        </div>
-        <p className="text-[10px] text-zinc-600 mb-2 leading-relaxed">
-          If Siftly saves you time, consider leaving a tip ☕
-        </p>
-        <button
-          onClick={copyAddress}
-          title="Copy ETH address"
-          className="w-full flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-lg bg-zinc-900/80 border border-zinc-700/40 hover:border-amber-500/40 hover:bg-zinc-900 transition-all group"
-        >
-          <span className="text-[9.5px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors truncate">
-            {DONATION_ADDRESS.slice(0, 10)}…{DONATION_ADDRESS.slice(-6)}
-          </span>
-          {copied
-            ? <Check size={11} className="text-emerald-400 shrink-0" />
-            : <Copy size={11} className="text-zinc-600 group-hover:text-amber-400 shrink-0 transition-colors" />
-          }
-        </button>
-      </div>
     </div>
   )
 }
@@ -112,7 +74,6 @@ const PIPELINE_STAGE_LABELS: Record<string, string> = {
   entities: 'Extracting entities',
   enrichment: 'Generating tags',
   categorize: 'Categorizing',
-  parallel: 'Processing in parallel',
 }
 
 export default function Nav() {
@@ -143,8 +104,8 @@ export default function Nav() {
       setCategories([])
       setTotalBookmarks(0)
     }
-    window.addEventListener('siftly:cleared', handleCleared)
-    return () => window.removeEventListener('siftly:cleared', handleCleared)
+    window.addEventListener('xtract:cleared', handleCleared)
+    return () => window.removeEventListener('xtract:cleared', handleCleared)
   }, [])
 
   useEffect(() => {
@@ -177,13 +138,13 @@ export default function Nav() {
   const visibleCats = showAllCats ? categories : categories.slice(0, 8)
 
   return (
-    <aside className="flex flex-col bg-zinc-900 border-r border-zinc-800/50 shrink-0 sticky top-0 h-screen overflow-y-auto" style={{ width: '228px' }}>
+    <aside className="flex flex-col bg-[#080c0a] border-r border-[#1a2e22] shrink-0 sticky top-0 h-screen overflow-y-auto" style={{ width: '228px' }}>
 
       {/* Brand */}
-      <div className="flex items-center justify-center gap-3 px-4 py-3.5 border-b border-zinc-800/50">
-        <img src="/logo.svg" alt="Siftly" className="w-9 h-9 shrink-0" />
-        <span className="text-zinc-100 font-bold text-[17px] tracking-tight">
-          Sift<span style={{ color: '#F5A623' }}>ly</span>
+      <div className="flex items-center justify-center gap-3 px-4 py-3.5 border-b border-[#1a2e22]">
+        <img src="/logo.svg" alt="Xtract" className="w-9 h-9 shrink-0" />
+        <span className="text-[#cddad2] font-bold text-[17px] tracking-[3px] uppercase" style={{ fontFamily: 'var(--font-mono), monospace' }}>
+          X<span style={{ color: '#00e676' }}>tract</span>
         </span>
         <div className="shrink-0 flex items-center">
           <ThemeToggle />
@@ -195,13 +156,13 @@ export default function Nav() {
        pathname !== '/categorize' && pathname !== '/import' && (
         <Link
           href="/categorize"
-          className="mx-3 mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/15 transition-colors"
+          className="mx-3 mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgba(0,230,118,0.08)] border border-[rgba(0,230,118,0.2)] hover:bg-[rgba(0,230,118,0.12)] transition-colors"
         >
           <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00e676] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00e676]" />
           </span>
-          <span className="text-[11px] font-medium text-indigo-300 truncate">
+          <span className="text-[11px] font-medium text-[#4aea9a] truncate">
             {pipeline.stage ? (PIPELINE_STAGE_LABELS[pipeline.stage] ?? pipeline.stage) : 'AI pipeline'}
             {pipeline.stage === 'categorize' && pipeline.total > 0
               ? ` ${pipeline.done}/${pipeline.total}`
@@ -214,7 +175,7 @@ export default function Nav() {
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={openSearch}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50 border border-zinc-700/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600/60 transition-all text-xs"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0e1612] border border-[#1a2e22] text-[#4a6055] hover:text-[#cddad2] hover:bg-[#141f1a] hover:border-[#243a2d] transition-all text-xs"
         >
           <Search size={12} className="shrink-0" />
           <span className="flex-1 text-left">Search…</span>
@@ -234,8 +195,8 @@ export default function Nav() {
               href={href}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
                 active
-                  ? 'bg-blue-500/12 text-blue-400'
-                  : 'text-zinc-500 hover:bg-zinc-800/70 hover:text-zinc-200'
+                  ? 'bg-[rgba(0,230,118,0.12)] text-[#00e676]'
+                  : 'text-[#4a6055] hover:bg-[#0e1612] hover:text-[#cddad2]'
               }`}
             >
               <Icon size={14} className="shrink-0" />
@@ -246,7 +207,7 @@ export default function Nav() {
       </nav>
 
       {/* Divider */}
-      <div className="mx-3 border-t border-zinc-800/50" />
+      <div className="mx-3 border-t border-[#1a2e22]" />
 
       {/* Categories section */}
       {categories.length > 0 && (
@@ -320,7 +281,7 @@ export default function Nav() {
         </div>
       )}
 
-      <SupportFooter />
+      <NavFooter />
     </aside>
   )
 }

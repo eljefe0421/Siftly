@@ -15,8 +15,6 @@ import {
   ExternalLink,
   ChevronDown,
   Zap,
-  Copy,
-  Coffee,
   Terminal,
   Loader2,
   X,
@@ -357,7 +355,7 @@ function ModelSelector({
       </div>
       {value === 'claude-opus-4-6' && (
         <p className="text-xs text-amber-500/80 mt-1.5">
-          Opus is slow with 20 parallel workers — consider Sonnet or Haiku for faster bulk categorization.
+          Opus is slower — consider Sonnet or Haiku for faster bulk categorization.
         </p>
       )}
     </>
@@ -394,7 +392,7 @@ function ClaudeCliStatusBox() {
             Claude CLI detected — no API key needed
           </p>
           <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">
-            Signed in as <span className="text-zinc-300">{tier}</span> via Claude Code. Siftly will use your subscription automatically. An API key below will take priority if set.
+            Signed in as <span className="text-zinc-300">{tier}</span> via Claude Code. Xtract will use your subscription automatically. An API key below will take priority if set.
           </p>
         </div>
       </div>
@@ -530,7 +528,7 @@ function DangerZoneSection({ onToast }: { onToast: (t: Toast) => void }) {
       setConfirming(false)
       setCleared(true)
       setTimeout(() => setCleared(false), 3000)
-      window.dispatchEvent(new CustomEvent('siftly:cleared'))
+      window.dispatchEvent(new CustomEvent('xtract:cleared'))
     } catch (err) {
       onToast({ type: 'error', message: err instanceof Error ? err.message : 'Failed to clear bookmarks' })
     } finally {
@@ -596,70 +594,28 @@ const TECH_STACK = [
   { label: 'Tailwind CSS', color: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20' },
 ]
 
-const DONATION_ADDRESS = '0xcF10B967a9e422753812004Cd59990f62E360760'
-
 function AboutSection() {
-  const [copied, setCopied] = useState(false)
-
-  function copyAddress() {
-    void navigator.clipboard.writeText(DONATION_ADDRESS).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
   return (
-    <Section icon={Info} title="About Siftly" description="Self-hosted Twitter bookmark manager">
+    <Section icon={Info} title="About Xtract" description="Self-hosted Twitter bookmark manager">
       <p className="text-sm text-zinc-400 leading-relaxed mb-5">
-        <strong className="text-zinc-100 font-semibold">Siftly</strong> is a self-hosted app for
+        <strong className="text-zinc-100 font-semibold">Xtract</strong> is a self-hosted app for
         organizing your Twitter/X bookmarks. Use the built-in bookmarklet or console script to import,
         then run the 4-stage AI pipeline to analyze images, extract entities, generate semantic tags, and
         auto-categorize — then explore connections through the interactive mindmap.
       </p>
 
-      {/* Builder + support row */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Built by */}
-        <a
-          href="https://x.com/viperr"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 hover:bg-zinc-800 transition-all group flex-1"
-        >
-          <span className="text-base leading-none">𝕏</span>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">@viperr</p>
-            <p className="text-[11px] text-zinc-600">Built &amp; open-sourced by</p>
-          </div>
-          <ExternalLink size={12} className="text-zinc-600 group-hover:text-zinc-400 transition-colors ml-auto shrink-0" />
-        </a>
-
-        {/* Donate */}
-        <div className="flex-1 px-4 py-3 rounded-xl bg-amber-500/8 border border-amber-500/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Coffee size={13} className="text-amber-400 shrink-0" />
-            <span className="text-xs font-semibold text-amber-300">Support development</span>
-          </div>
-          <p className="text-[11px] text-zinc-500 mb-2.5 leading-relaxed">
-            If Siftly saves you time, consider leaving a tip
-          </p>
-          <button
-            onClick={copyAddress}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zinc-900/60 border border-amber-500/20 hover:border-amber-500/50 hover:bg-zinc-900 transition-all group"
-          >
-            <span className="text-[10px] font-mono text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
-              {DONATION_ADDRESS}
-            </span>
-            {copied
-              ? <Check size={13} className="text-emerald-400 shrink-0" />
-              : <Copy size={13} className="text-zinc-600 group-hover:text-amber-400 transition-colors shrink-0" />
-            }
-          </button>
-          {copied && (
-            <p className="text-[10px] text-emerald-400 mt-1.5 text-center">Address copied!</p>
-          )}
+      <a
+        href="https://x.com/diego_salinas33"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 hover:bg-zinc-800 transition-all group"
+      >
+        <span className="text-base leading-none">𝕏</span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">@diego_salinas33</p>
         </div>
-      </div>
+        <ExternalLink size={12} className="text-zinc-600 group-hover:text-zinc-400 transition-colors ml-auto shrink-0" />
+      </a>
     </Section>
   )
 }
@@ -679,7 +635,7 @@ export default function SettingsPage() {
       <div className="mb-8">
         <p className="text-xs text-zinc-500 uppercase tracking-widest font-medium mb-1">Configuration</p>
         <h1 className="text-2xl font-bold text-zinc-100">Settings</h1>
-        <p className="text-zinc-400 mt-1 text-sm">Configure your Siftly instance</p>
+        <p className="text-zinc-400 mt-1 text-sm">Configure your Xtract instance</p>
       </div>
 
       {/* Toast */}

@@ -87,7 +87,7 @@ export async function ftsSearch(keywords: string[]): Promise<string[]> {
       SELECT bookmark_id FROM bookmark_fts
       WHERE bookmark_fts MATCH ${matchQuery}
       ORDER BY rank
-      LIMIT 150
+      LIMIT 300
     `
     return results.map((r) => r.bookmark_id)
   } catch {

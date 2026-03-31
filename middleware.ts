@@ -3,15 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 /**
  * Optional HTTP Basic Auth protection.
  *
- * Set SIFTLY_USERNAME and SIFTLY_PASSWORD in your .env to enable.
+ * Set XTRACT_USERNAME and XTRACT_PASSWORD in your .env to enable.
  * Leave both unset (the default) for unrestricted local access.
  *
  * The bookmarklet endpoint is excluded so cross-origin imports from x.com
  * continue to work regardless of auth configuration.
  */
 export function middleware(request: NextRequest): NextResponse {
-  const username = process.env.SIFTLY_USERNAME?.trim()
-  const password = process.env.SIFTLY_PASSWORD?.trim()
+  const username = process.env.XTRACT_USERNAME?.trim()
+  const password = process.env.XTRACT_PASSWORD?.trim()
 
   // No credentials configured → pass through (default local behaviour)
   if (!username || !password) return NextResponse.next()
@@ -42,7 +42,7 @@ export function middleware(request: NextRequest): NextResponse {
 
   return new NextResponse('Unauthorized', {
     status: 401,
-    headers: { 'WWW-Authenticate': 'Basic realm="Siftly"' },
+    headers: { 'WWW-Authenticate': 'Basic realm="Xtract"' },
   })
 }
 

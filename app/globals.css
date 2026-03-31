@@ -1,15 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
-  /* Siftly brand */
-  --brand-blue: #4A90D9;
-  --brand-orange: #F5A623;
-  --brand-navy: #1E3A6E;
-  --color-indigo-600: #2563EB;
-  --color-indigo-500: #3B82F6;
-  --color-indigo-400: #60A5FA;
+  --background: #000000;
+  --foreground: #cddad2;
+  /* Xtract brand — military dark */
+  --brand-green: #00e676;
+  --brand-green-dim: rgba(0,230,118,0.15);
+  --brand-green-glow: rgba(0,230,118,0.25);
+  --brand-surface: #080c0a;
+  --brand-surface2: #0e1612;
+  --brand-border: #1a2e22;
+  --brand-border-hi: #243a2d;
+  --color-indigo-600: #00e676;
+  --color-indigo-500: #00e676;
+  --color-indigo-400: #4aea9a;
 }
 
 /* ── Light mode: invert the zinc scale ────────────────────────────────────── */
@@ -36,7 +40,7 @@ html.light {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-space), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
