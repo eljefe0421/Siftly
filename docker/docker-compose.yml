@@ -1,4 +1,4 @@
-name: siftly
+name: xtract
 
 services:
   app:
@@ -10,8 +10,8 @@ services:
     env_file:
       - .env
     volumes:
-      - siftly_data:/data
+      - xtract_data:/data
     restart: unless-stopped
 
 volumes:
-  siftly_data:
+  xtract_data:

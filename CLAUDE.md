@@ -1,4 +1,4 @@
-# Siftly
+# Xtract
 
 Self-hosted Twitter/X bookmark manager with AI-powered categorization, search, and visualization.
 
@@ -20,7 +20,7 @@ App runs at **http://localhost:3000**
 
 ## AI Authentication — No API Key Needed
 
-If the user is signed into Claude Code CLI, **Siftly uses their Claude subscription automatically**. No API key configuration required.
+If the user is signed into Claude Code CLI, **Xtract uses their Claude subscription automatically**. No API key configuration required.
 
 How it works:
 - `lib/claude-cli-auth.ts` reads the OAuth token from the macOS keychain (`Claude Code-credentials`)
@@ -88,16 +88,16 @@ See `.env.example` for the full list. Only `DATABASE_URL` is required (defaults 
 
 ## CLI for AI Agents
 
-`cli/siftly.ts` provides direct database access without the Next.js server. Outputs JSON (pretty-printed on TTY, compact when piped). Must run from project root.
+`cli/xtract.ts` provides direct database access without the Next.js server. Outputs JSON (pretty-printed on TTY, compact when piped). Must run from project root.
 
 ```bash
-npx tsx cli/siftly.ts stats                          # Library statistics
-npx tsx cli/siftly.ts categories                     # Categories with counts
-npx tsx cli/siftly.ts search "AI agents"             # FTS5 keyword search
-npx tsx cli/siftly.ts list --limit 5                 # Recent bookmarks
-npx tsx cli/siftly.ts list --source like --category ai-resources --sort oldest
-npx tsx cli/siftly.ts show <id|tweetId>              # Full bookmark detail
-npm run siftly -- stats                              # Alternative via npm script
+npx tsx cli/xtract.ts stats                          # Library statistics
+npx tsx cli/xtract.ts categories                     # Categories with counts
+npx tsx cli/xtract.ts search "AI agents"             # FTS5 keyword search
+npx tsx cli/xtract.ts list --limit 5                 # Recent bookmarks
+npx tsx cli/xtract.ts list --source like --category ai-resources --sort oldest
+npx tsx cli/xtract.ts show <id|tweetId>              # Full bookmark detail
+npm run xtract -- stats                              # Alternative via npm script
 ```
 
 ## Common Tasks

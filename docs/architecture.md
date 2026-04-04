@@ -1,4 +1,4 @@
-# Siftly — Architecture Overview
+# Xtract — Architecture Overview
 
 ## What It Is
 Self-hosted Twitter/X bookmark manager with AI-powered categorization, search, and visualization.
@@ -24,7 +24,7 @@ Twitter Export / Manual Import
 ## Key Architecture Decisions
 - **SQLite over Postgres:** Single-user self-hosted app. No server needed. File-based DB keeps deployment simple.
 - **Claude CLI Auth:** Piggybacks on existing Claude subscription instead of requiring a separate API key. See `lib/claude-cli-auth.ts`.
-- **CLI for AI agents:** `cli/siftly.ts` provides direct DB access so Claude Code can query bookmarks without going through the web UI.
+- **CLI for AI agents:** `cli/xtract.ts` provides direct DB access so Claude Code can query bookmarks without going through the web UI.
 
 ## Module Map
 - `/app/api/` — All API routes (categorize, import, search, settings, analyze, bookmarks, categories, mindmap, stats)

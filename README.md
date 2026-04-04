@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="public/logo.svg" alt="Siftly" width="80" height="80" />
+  <img src="public/logo.svg" alt="Xtract" width="80" height="80" />
 
-  <h1>Siftly</h1>
+  <h1>Xtract</h1>
 
   <p><strong>Self-hosted Twitter/X bookmark manager with AI-powered organization</strong></p>
 
@@ -18,9 +18,9 @@
 
 ---
 
-## What is Siftly?
+## What is Xtract?
 
-Siftly turns your Twitter/X bookmarks into a **searchable, categorized, visual knowledge base** — running entirely on your machine. No cloud, no subscriptions, no browser extensions required. Everything stays local except the AI API calls you configure.
+Xtract turns your Twitter/X bookmarks into a **searchable, categorized, visual knowledge base** — running entirely on your machine. No cloud, no subscriptions, no browser extensions required. Everything stays local except the AI API calls you configure.
 
 It runs a **4-stage AI pipeline** on your bookmarks:
 
@@ -56,8 +56,8 @@ After the pipeline runs, you get:
 ### Option A — One command (recommended)
 
 ```bash
-git clone https://github.com/viperrcrypto/Siftly.git
-cd Siftly
+git clone https://github.com/viperrcrypto/Xtract.git
+cd Xtract
 ./start.sh
 ```
 
@@ -68,8 +68,8 @@ cd Siftly
 If you're using [Claude Code](https://claude.ai/code) to set up the project, it will read `CLAUDE.md` and know exactly how to get started. Just open the project folder:
 
 ```bash
-git clone https://github.com/viperrcrypto/Siftly.git
-claude Siftly/
+git clone https://github.com/viperrcrypto/Xtract.git
+claude Xtract/
 ```
 
 Claude Code will handle setup and start the app using your existing Claude subscription — no extra configuration needed.
@@ -77,8 +77,8 @@ Claude Code will handle setup and start the app using your existing Claude subsc
 ### Option C — Manual setup
 
 ```bash
-git clone https://github.com/viperrcrypto/Siftly.git
-cd Siftly
+git clone https://github.com/viperrcrypto/Xtract.git
+cd Xtract
 npm install
 npx prisma generate
 npx prisma migrate dev --name init
@@ -91,20 +91,20 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## AI Authentication
 
-Siftly automatically detects the best available auth method — no configuration needed in the most common case.
+Xtract automatically detects the best available auth method — no configuration needed in the most common case.
 
 ### Priority order
 
 | # | Method | How |
 |---|--------|-----|
-| 1 | **Claude Code CLI** *(zero config)* | Already signed in? Siftly reads your session from the macOS keychain automatically |
+| 1 | **Claude Code CLI** *(zero config)* | Already signed in? Xtract reads your session from the macOS keychain automatically |
 | 2 | **API key in Settings** | Open Settings in the app and paste your key |
 | 3 | **`ANTHROPIC_API_KEY` env var** | Set in `.env.local` or your shell environment |
 | 4 | **Local proxy** | Set `ANTHROPIC_BASE_URL` to any Anthropic-compatible endpoint |
 
 ### Claude Code CLI (no API key needed)
 
-If you use [Claude Code](https://claude.ai/code), you're already signed in. Siftly detects your session from the macOS keychain and uses your Claude subscription (Free/Pro/Max) automatically.
+If you use [Claude Code](https://claude.ai/code), you're already signed in. Xtract detects your session from the macOS keychain and uses your Claude subscription (Free/Pro/Max) automatically.
 
 The Settings page shows a green **"Claude CLI detected — no API key needed"** badge with your subscription tier when this is active.
 
@@ -114,7 +114,7 @@ The Settings page shows a green **"Claude CLI detected — no API key needed"** 
 
 1. Go to [console.anthropic.com](https://console.anthropic.com)
 2. Create a new API key
-3. Open Siftly → Settings → paste it in
+3. Open Xtract → Settings → paste it in
 
 New accounts include $5 free credit — enough for thousands of bookmarks at Haiku pricing (~$0.00025/bookmark).
 
@@ -122,31 +122,31 @@ New accounts include $5 free credit — enough for thousands of bookmarks at Hai
 
 ## Importing Your Bookmarks
 
-Siftly has **built-in import tools** — no browser extensions required. Go to the **Import** page and choose either method:
+Xtract has **built-in import tools** — no browser extensions required. Go to the **Import** page and choose either method:
 
 ### Method A — Bookmarklet *(Recommended)*
 
-1. Go to **Import** in the Siftly sidebar
+1. Go to **Import** in the Xtract sidebar
 2. Drag the **"Export X Bookmarks"** link to your browser's bookmark bar
    *(or right-click the bookmark bar → Add Bookmark → paste the URL)*
 3. Go to [x.com/i/bookmarks](https://x.com/i/bookmarks) while logged in to X
 4. Click **"Export X Bookmarks"** in your bookmark bar — a purple button appears on the page
 5. Click **"▶ Auto-scroll"** — the tool scrolls through and captures all your bookmarks automatically
 6. When complete, click the purple **"Export N bookmarks"** button — `bookmarks.json` downloads
-7. Back in Siftly → **Import** → drop or upload the file
+7. Back in Xtract → **Import** → drop or upload the file
 
 ### Method B — Browser Console Script
 
 1. Go to [x.com/i/bookmarks](https://x.com/i/bookmarks) while logged in to X
 2. Open DevTools: press `F12` (Windows/Linux) or `⌘⌥J` (Mac), then go to the **Console** tab
-3. Copy the console script from the Siftly Import page, paste it into the console, and press Enter
+3. Copy the console script from the Xtract Import page, paste it into the console, and press Enter
 4. Click **"▶ Auto-scroll"** and wait for all bookmarks to be captured
 5. Click the export button — `bookmarks.json` downloads automatically
-6. Back in Siftly → **Import** → upload the file
+6. Back in Xtract → **Import** → upload the file
 
 ### Re-importing
 
-Re-import anytime — Siftly automatically skips duplicates and only adds new bookmarks.
+Re-import anytime — Xtract automatically skips duplicates and only adds new bookmarks.
 
 ---
 
@@ -245,7 +245,7 @@ All settings are manageable in the **Settings** page at `/settings` or via envir
 
 ### Custom API Endpoint
 
-Point Siftly at any Anthropic-compatible server:
+Point Xtract at any Anthropic-compatible server:
 
 ```env
 ANTHROPIC_BASE_URL=http://localhost:8080
@@ -256,7 +256,7 @@ ANTHROPIC_BASE_URL=http://localhost:8080
 ## Architecture
 
 ```
-siftly/
+xtract/
 ├── app/
 │   ├── api/
 │   │   ├── analyze/images/   # Batch image vision analysis (GET progress, POST run)
@@ -332,7 +332,7 @@ ImportJob         — tracks import file status and progress
 
 ### Prisma + SQLite + FTS5
 
-Siftly uses Prisma migrations for relational schema changes.
+Xtract uses Prisma migrations for relational schema changes.
 In development, run `npx prisma migrate dev --name <change-name>` when schema changes.
 For runtime/prod-style startup, apply committed migrations with `npx prisma migrate deploy`.
 FTS5 (`bookmark_fts`) is managed at runtime in [`lib/fts.ts`](./lib/fts.ts), not in `schema.prisma`.
@@ -416,7 +416,7 @@ Add domain strings to `KNOWN_TOOL_DOMAINS` in `lib/rawjson-extractor.ts` to have
 
 ## Support Development
 
-If Siftly saves you time, consider leaving a tip ☕
+If Xtract saves you time, consider leaving a tip ☕
 
 ---
 

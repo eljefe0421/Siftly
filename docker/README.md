@@ -1,4 +1,4 @@
-# Siftly — Docker
+# Xtract — Docker
 
 ## Prerequisites
 
@@ -109,7 +109,7 @@ docker compose up        →  prisma migrate deploy  (applies pending migrations
 The SQLite database is stored in a named Docker volume:
 
 ```
-siftly_data  →  /data/dev.db  (inside the container)
+xtract_data  →  /data/dev.db  (inside the container)
 ```
 
 The volume persists across `docker compose down` and restarts. Your bookmarks are safe.
@@ -118,9 +118,9 @@ The volume persists across `docker compose down` and restarts. Your bookmarks ar
 
 ```bash
 docker run --rm \
-  -v siftly_docker_siftly_data:/data \
+  -v xtract_docker_xtract_data:/data \
   -v $(pwd):/backup \
-  alpine cp /data/dev.db /backup/siftly-backup.db
+  alpine cp /data/dev.db /backup/xtract-backup.db
 ```
 
 **To wipe everything and start fresh:**

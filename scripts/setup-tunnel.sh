@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Setup a persistent Cloudflare Tunnel for Siftly
+# Setup a persistent Cloudflare Tunnel for Xtract
 #
 # Prerequisites:
 # 1. .env.cloudflare with Cloudflare credentials
@@ -19,7 +19,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}=== Siftly Cloudflare Tunnel Setup ===${NC}\n"
+echo -e "${BLUE}=== Xtract Cloudflare Tunnel Setup ===${NC}\n"
 
 # Load from .env.cloudflare
 if [[ -f .env.cloudflare ]]; then
@@ -35,7 +35,7 @@ else
     echo "  CLOUDFLARE_ACCOUNT_ID=your-account-id"
     echo "  CLOUDFLARE_ZONE_ID=your-zone-id"
     echo "  CLOUDFLARE_DOMAIN=atlasguide.dev"
-    echo "  CLOUDFLARE_SUBDOMAIN_PREFIX=siftly"
+    echo "  CLOUDFLARE_SUBDOMAIN_PREFIX=xtract"
     exit 1
 fi
 
