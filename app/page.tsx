@@ -43,7 +43,14 @@ type QueryResult = Awaited<ReturnType<typeof queryDashboard>>
 function buildDashboardData(result: QueryResult) {
   const [totalBookmarks, totalCategories, totalMedia, uncategorizedCount, recentRaw, catsRaw, bookmarkSourceCount, likeSourceCount] = result
 
-  const recentBookmarks: BookmarkWithMedia[] = recentRaw.map((b) => ({
+  const seen = new Set<string>()
+  const dedupedRecent = recentRaw.filter((b) => {
+    if (seen.has(b.id)) return false
+    seen.add(b.id)
+    return true
+  })
+
+  const recentBookmarks: BookmarkWithMedia[] = dedupedRecent.map((b) => ({
     id: b.id,
     tweetId: b.tweetId,
     text: b.text,

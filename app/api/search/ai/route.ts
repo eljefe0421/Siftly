@@ -331,8 +331,8 @@ Return ONLY valid JSON — no markdown, no prose outside the JSON object:
 }
 
 Constraints:
-- Return ALL matches that score 0.30 or above — no cap on count
-- Minimum score 0.30 — be generous for semantically close matches
+- Return ALL matches that score 0.20 or above — no cap on count
+- Minimum score 0.20 — be generous for semantically close matches
 - Never repeat an id
 - Only return ids from the list above
 - reason must be specific, not generic ("shows bitcoin price crash chart" not "related to crypto")`
@@ -342,7 +342,7 @@ Constraints:
   try {
     const msg = await client.messages.create({
       model,
-      max_tokens: 8000,
+      max_tokens: 12000,
       messages: [{ role: 'user', content: prompt }],
     })
     const rawText = msg.content.find((b) => b.type === 'text')?.text ?? '{}'

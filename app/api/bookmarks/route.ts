@@ -96,7 +96,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       prisma.bookmark.count({ where }),
     ])
 
-    const formatted = bookmarks.map((bookmark) => ({
+    const seen = new Set<string>()
+    const deduped = bookmarks.filter((b) => {
+      if (seen.has(b.id)) return false
+      seen.add(b.id)
+      return true
+    })
+
+    const formatted = deduped.map((bookmark) => ({
       id: bookmark.id,
       tweetId: bookmark.tweetId,
       text: bookmark.text,

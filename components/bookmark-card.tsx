@@ -363,12 +363,27 @@ function TopMediaSlot({ item, tweetUrl }: TopMediaSlotProps) {
     )
   }
 
-  // ── Video/GIF: always redirect to tweet — can't play locally ──────────────
-  // Guard: thumbnailUrl that is itself a video URL is not usable as an <img>
+  // ── Video/GIF: play inline via proxy ───────────────────────────────────────
+  const videoSrc = isVideoUrl(item.url) ? proxyUrl(item.url) : null
   const rawThumb = item.thumbnailUrl ?? null
   const thumb = rawThumb && !isVideoUrl(rawThumb) ? rawThumb
     : (!isVideoUrl(item.url) ? item.url : null)
 
+  // If we have a playable video URL, render an inline <video>
+  if (videoSrc) {
+    return (
+      <video
+        src={videoSrc}
+        poster={thumb && !imgError ? proxyUrl(thumb) : undefined}
+        controls
+        preload="metadata"
+        className="w-full h-48 object-cover bg-black"
+        onError={() => setImgError(true)}
+      />
+    )
+  }
+
+  // Fallback: no playable video URL — link to tweet
   return (
     <a href={tweetUrl} target="_blank" rel="noopener noreferrer" className="relative block" onClick={(e) => e.stopPropagation()}>
       {thumb && !imgError ? (
